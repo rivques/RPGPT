@@ -1,0 +1,19 @@
+{
+  "name": "bagkery",
+  "version": "0.1.0",
+  "description": "A Bag store that bakes bread.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm run build && node dist/index.js",
+    "build": "npx tsc"
+  },
+  "author": "rivques",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "@slack/bolt": "^3.17.1",
+    "@types/node": "^20.11.30",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.4.3"
+  }
+}
