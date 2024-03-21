@@ -1,4 +1,6 @@
-class BagContext {
+import { Item, PlayerID, ItemStack } from "./bag-types";
+
+export class BagContext {
     say(message: string) {
         // TODO
     }

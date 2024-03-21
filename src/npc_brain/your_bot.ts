@@ -1,4 +1,7 @@
-class Bagkery extends NpcBrain {
+import { NpcBrain } from "./npc_brain";
+import { LlmContext, LlmVariable, UserAction, BotAction } from "../scorcerorpheus/llm_interfaces";
+
+export class YourBot extends NpcBrain {
     getNpcName(): string {
         return "Bagkery";
     }
@@ -25,28 +28,22 @@ class Bagkery extends NpcBrain {
         return [
             {
                 name: "Speak",
-                parameters: ["The user's message to you"],
+                parameters: [{
+                    user_label: "Message",
+                    prompt: "The user's message to you",
+                    type: "string"
+                }],
                 howBotShouldHandle: "You should respond to the user's message. Bargain with them."
             },
             {
                 name: "Give item",
-                parameters: ["The item you've been given"],
+                parameters: [{
+                    prompt: "The item you've been given",
+                    user_label: "Item to give",
+                    type: "inventory_item_stack"
+                }],
                 howBotShouldHandle: "If the item is related to the user's request, accept it, " 
                 + "and do something with it if appropriate. Otherwise, refuse it confusedly."
-            },
-            {
-                name: "Unknown item",
-                parameters: ["The item that doesn't exist"],
-                howBotShouldHandle: "You tried to craft or give an item that doesn't exist. " 
-                + "Either try again with a valid item, or continue with the story."
-            },
-            {
-                name: "Unposessed item",
-                parameters: ["The items that you don't have"],
-                howBotShouldHandle: "You tried to craft or give an item that you don't have. " 
-                + "Either try again with a valid item, or continue with the story. " 
-                + "If you're trying to craft with an ingredient the player hasn't given you, " 
-                + "ask if they have any of the item."
             }
         ];
     }

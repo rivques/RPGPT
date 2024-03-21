@@ -1,3 +1,3 @@
-abstract class ChatbotInterface {
+export abstract class ChatbotInterface {
     // TODO
 }
