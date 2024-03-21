@@ -13,7 +13,9 @@
   "dependencies": {
     "@slack/bolt": "^3.17.1",
     "@types/node": "^20.11.30",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
     "typescript": "^5.4.3"
   }
 }
