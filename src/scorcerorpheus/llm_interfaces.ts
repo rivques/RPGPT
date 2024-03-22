@@ -2,7 +2,7 @@ import { BagContext } from "../bag_interface/bag-context";
 
 export interface UserAction { // an action the user can take
 	name: string;
-	parameters: { user_label: string, prompt: string, type: "string" | "inventory_item_stack" | "bool" | "number" }[];
+	parameters: { user_label: string, prompt: string, type: "string" | "inventory_item_stack" | "bool" | "int" | "float" }[];
 	howBotShouldHandle: string;
 }
 

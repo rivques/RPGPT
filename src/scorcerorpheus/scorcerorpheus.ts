@@ -26,10 +26,10 @@ export class SorcerOrpheus {
         // pseudocode:
         // initialize the chatbot and get its first message
         // return the message and the user's possible actions
-        return {message: "placeholder", actions: [
-            {name: "placeholder", parameters: [
-                {user_label: "placeholder", prompt: "placeholder", type: "string"}
-            ], howBotShouldHandle: "placeholder"}
+        return {message: "placeholder msg!", actions: [
+            {name: "Speak", parameters: [
+                {user_label: "Message", prompt: "the thing they said", type: "string"}
+            ], howBotShouldHandle: "say, reply, or smth"}
         ]};
     }
 }

@@ -1,4 +1,4 @@
-import { App, SlashCommand, AckFn, RespondFn, RespondArguments } from "@slack/bolt";
+import { App, SlashCommand, AckFn, RespondFn, RespondArguments, BlockAction, ButtonAction, Block } from "@slack/bolt";
 import fs from "fs";
 import { OpenAIHackClubProxy } from "../chatbot_interfaces/openai_hackclub_proxy";
 import { SorcerOrpheus, ResponseForUser } from "../scorcerorpheus/scorcerorpheus";
@@ -39,6 +39,15 @@ export class InteractionManager {
         });
         
         app.command('/bagkery-interact', async ({ command, ack, respond }) => {await this.handleStartInteractionCommand(command, ack, respond)});
+
+        app.action(new RegExp(".*"), async ({ ack, body, respond, action, payload }) => {
+            await ack();
+            const blockAction = (body as BlockAction)
+            if (blockAction.actions[0].type !== "button"){
+                throw new Error("unsupported action type: " + blockAction.actions[0].type);
+            }
+            await this.handleActionButtonPressed(blockAction as BlockAction<ButtonAction>);
+        })
     }
 
     startApp(){
@@ -107,6 +116,122 @@ export class InteractionManager {
             thread_ts: threadInfo.ts,
             blocks: blocks,
             text: firstMessage.message
+        });
+    }
+
+    handleActionButtonPressed(action: BlockAction<ButtonAction>){
+        // step 1: find the interaction that this action corresponds to by matching channel id and thread ts
+        const interaction = this.currentInteractions.find((interaction) => {
+            return interaction.threadInfo.channelID === action.container.channel_id && interaction.threadInfo.ts === action.message?.thread_ts;
+        });
+        if (interaction === undefined){
+            throw new Error("interaction not found");
+        }
+        if (interaction.userID !== action.user.id){
+            this.app.client.chat.postEphemeral({
+                token: process.env.SLACK_BOT_TOKEN,
+                channel: action.container.channel_id,
+                user: action.user.id,
+                text: `Hey! You're not <@${interaction.userID}>! Go start your own interaction!`
+            });
+            return;
+        }
+        console.log(`found interaction for ${interaction.userID}: ${interaction.sorcerorpheus.getBrain().getNpcName()}`);
+        // now, find the action that corresponds to the button that was pressed
+        // and use it to construct a modal
+        const actionName = action.actions[0].value;
+        const actionToExecute = interaction.sorcerorpheus.getBrain().getUserActions().find((action) => action.name === actionName);
+        if (actionToExecute === undefined){
+            throw new Error(`action ${actionName} not found among ${interaction.sorcerorpheus.getBrain().getUserActions().map((action) => action.name).join(", ")}`);
+        }
+        // now we have to construct a modal from the action
+        // each parameter in the action corresponds to a field in the modal
+
+        const modalBlocks: any[] = [];
+        for (const parameter of actionToExecute.parameters){
+            let element;
+            switch (parameter.type){
+                case "string":
+                    element = {
+                        type: "plain_text_input",
+                        action_id: parameter.user_label
+                    }
+                    break;
+                case "int":
+                    element = {
+                        type: "plain_text_input",
+                        action_id: parameter.user_label,
+                        is_decimal_allowed: false
+                    }
+                    break;
+                case "float":
+                    element = {
+                        type: "plain_text_input",
+                        action_id: parameter.user_label,
+                        is_decimal_allowed: true
+                    }
+                    break;
+                case "bool":
+                    element = {
+                        type: "static_select",
+                        action_id: parameter.user_label,
+                        options: [
+                            {
+                                text: {
+                                    type: "plain_text",
+                                    text: "Yes"
+                                },
+                                value: "true"
+                            },
+                            {
+                                text: {
+                                    type: "plain_text",
+                                    text: "No"
+                                },
+                                value: "false"
+                            }
+                        ]
+                    }
+                case "inventory_item_stack":
+                    element = {
+                        type: "plain_text_input",
+                        action_id: parameter.user_label,
+                        placeholder: {
+                            type: "plain_text",
+                            text: "Items not yet supported. Sorry!"
+                        }
+                    };
+                    break;
+            }
+            modalBlocks.push({
+                type: "input",
+                element,
+                label: {
+                    type: "plain_text",
+                    text: parameter.user_label
+                }
+            });
+        }
+        this.app.client.views.open({
+            token: process.env.SLACK_BOT_TOKEN,
+            trigger_id: action.trigger_id,
+            view: {
+                type: "modal",
+                callback_id: "user_input",
+                title: {
+                    type: "plain_text",
+                    text: actionName
+                },
+                blocks: modalBlocks,
+                close: {
+                    type: "plain_text",
+                    text: "Cancel"
+                },
+                submit: {
+                    type: "plain_text",
+                    text: "Submit"
+                }
+            }
         });
     }
 }
