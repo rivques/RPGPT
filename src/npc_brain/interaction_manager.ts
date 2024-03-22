@@ -1,4 +1,4 @@
-import { App, SlashCommand, AckFn, RespondFn, RespondArguments, BlockAction, ButtonAction, Block } from "@slack/bolt";
+import { App, SlashCommand, AckFn, RespondFn, RespondArguments, BlockAction, ButtonAction, Block, SlackViewAction, ViewOutput } from "@slack/bolt";
 import fs from "fs";
 import { OpenAIHackClubProxy } from "../chatbot_interfaces/openai_hackclub_proxy";
 import { SorcerOrpheus, ResponseForUser } from "../scorcerorpheus/scorcerorpheus";
@@ -48,6 +48,43 @@ export class InteractionManager {
             }
             await this.handleActionButtonPressed(blockAction as BlockAction<ButtonAction>);
         })
+
+        app.view('user_input', async ({ ack, body, view }) => {
+            await ack();
+            console.log("got view submission");
+            console.log(body);
+            console.log(view.state.values);
+            await this.handleViewSubmission(body, view);
+        });
+    }
+
+    handleViewSubmission(body: SlackViewAction, view: ViewOutput) {
+        // find the interaction that this view submission corresponds to
+        // then find the action that corresponds to the view submission
+        // and execute it via sorcerorpheus
+
+        const interaction = this.currentInteractions.find((interaction) => {
+            return interaction.userID === body.user.id;
+        });
+        if (interaction === undefined){
+            throw new Error("interaction not found");
+        }
+        const actionName = view.title.text;
+        // parameters is a map from user_label to value
+        let parameters: { [user_label: string]: string } = {};
+        for (const inputStates of Object.values(view.state.values)){
+            if (Object.keys(inputStates).length !== 1){
+                throw new Error(`expected exactly one key in inputStates: ${view.state.values}`);
+            }
+            const user_label = Object.keys(inputStates)[0];
+            const value = inputStates[user_label].value; // this verbosity is necessary because typescript is bad :)
+            if (value !== undefined && value !== null) {
+                parameters[user_label] = value;
+            } else {
+                throw new Error(`value is undefined in inputStates: ${inputStates}`);
+            }
+        }
+        interaction.sorcerorpheus.executeUserAction(actionName, parameters);
     }
 
     startApp(){

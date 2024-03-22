@@ -32,4 +32,9 @@ export class SorcerOrpheus {
             ], howBotShouldHandle: "say, reply, or smth"}
         ]};
     }
+
+    executeUserAction(actionName: string, parameters: { [user_label: string]: string; }) {
+        console.log(`Executing user action ${actionName} with parameters ${parameters}`);
+        throw new Error("Method not implemented.");
+    }
 }
