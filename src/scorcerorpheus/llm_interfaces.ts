@@ -6,15 +6,8 @@ export interface UserAction { // an action the user can take
 	howBotShouldHandle: string;
 }
 
-export interface LlmVariable<StoredType> { // a variable the model can modify
-	name: string;
-	prompt: string;
-	value: StoredType;
-}
-
 export interface LlmContext { // like a variable, but the model can't modify it. example use: inventory
 	name: string;
-	prompt: string;
 	valueFunction: (ctx: BagContext) => any; // called before every prompt to the LLM
 }
 
@@ -22,13 +15,18 @@ export interface BotAction { // an action the NPC can take
 	name: string;
 	description: string;
 	parameters: { [parameterName: string]: string } // value is description of parameter
-	functionToCall: (ctx: BagContext, parameters: { [parameterName: string]: string }, variables: LlmVariable<any>[]) => void;
+	functionToCall: (ctx: BagContext, parameters: { [parameterName: string]: string }) => void;
 	// that's the function that gets called when the LLM chooses this action
 	// as context it gets a BagContext for interacting with Bag and the user,
 	// the llm-filled-out parameters, and the variables (which may have been changed by the llm)
 }
 
 export interface Message {
-	role: "system" | "user" | "assistant" | "tool";
+	role: "user" | "assistant";
 	content: string;
+}
+
+export interface LlmResponse {
+	message: string;
+	actions: {[actionName: string]: {[parameterName: string]: string}};
 }

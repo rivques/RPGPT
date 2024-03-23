@@ -1,3 +1,5 @@
+import { LlmResponse, Message } from "../scorcerorpheus/llm_interfaces";
+
 export abstract class ChatbotInterface {
-    // TODO
+    abstract prompt(system: string, messages: Message[]): Promise<LlmResponse>;
 }

@@ -1,9 +1,10 @@
-import { App, SlashCommand, AckFn, RespondFn, RespondArguments, BlockAction, ButtonAction, Block, SlackViewAction, ViewOutput } from "@slack/bolt";
+import { App, SlashCommand, AckFn, RespondFn, RespondArguments, BlockAction, ButtonAction, Block, SlackViewAction, ViewOutput, MessageRepliedEvent } from "@slack/bolt";
 import fs from "fs";
-import { OpenAIHackClubProxy } from "../chatbot_interfaces/openai_hackclub_proxy";
 import { SorcerOrpheus, ResponseForUser } from "../scorcerorpheus/scorcerorpheus";
 import { ChatbotInterface } from "../chatbot_interfaces/chatbot_interface";
 import { YourBot } from "./your_bot";
+import { AnthropicInterface } from "../chatbot_interfaces/anthropic";
+import { OpenAIHackClubProxy } from "../chatbot_interfaces/openai_hackclub_proxy";
 
 interface Interaction {
     sorcerorpheus: SorcerOrpheus;
@@ -27,11 +28,36 @@ export class InteractionManager {
     app: App;
     chatbotInterface: ChatbotInterface;
     currentInteractions: Interaction[] = [];
+    INTERACTION_CHANNELS = ["C06QL7WMRLK"];
 
     constructor(app: App){
-        this.chatbotInterface = new OpenAIHackClubProxy();
+        this.chatbotInterface = new OpenAIHackClubProxy(process.env.LLM_API_KEY ?? "put ur key in the env variable");
         
         this.app = app;
+        for (const channelID of this.INTERACTION_CHANNELS){
+            this.app.client.conversations.join({
+                token: process.env.SLACK_BOT_TOKEN,
+                channel: channelID
+            });
+            console.info(`joined channel ${channelID}`);
+        }
+        // leave all channels except the interaction channels
+        this.app.client.users.conversations({
+            token: process.env.SLACK_BOT_TOKEN
+        }).then((response) => {
+            if (response.channels === undefined){
+                throw new Error("response.channels is undefined");
+            }
+            for (const channel of response.channels){
+                if (channel.id !== undefined && !this.INTERACTION_CHANNELS.includes(channel.id)){
+                    this.app.client.conversations.leave({
+                        token: process.env.SLACK_BOT_TOKEN,
+                        channel: channel.id
+                    });
+                console.info(`left channel ${channel.id}`);
+                }
+            }
+        });
         // Listen for a slash command
         app.command('/bagkery-ping', async ({ command, ack, say }) => {
             await ack();
@@ -56,9 +82,39 @@ export class InteractionManager {
             console.log(view.state.values);
             await this.handleViewSubmission(body, view);
         });
+
+        app.event("message", async ({ event, body }) => {
+            console.log("got message_replied event");
+            console.log(event);
+            const mre: any = event as any; // leave the land of safety because i don't understand bolt's event types
+            if (mre.thread_ts === undefined){
+                return
+            }
+            const interaction = this.currentInteractions.find((interaction) => {
+                return interaction.threadInfo.channelID === mre.channel && interaction.threadInfo.ts === mre.thread_ts;
+            });
+            if (interaction === undefined){
+                return;
+            }
+            if (interaction.userID !== mre.user){
+                this.app.client.chat.postEphemeral({
+                    token: process.env.SLACK_BOT_TOKEN,
+                    channel: mre.channel,
+                    user: mre.user,
+                    text: `Hey! You're not <@${interaction.userID}>! Go start your own interaction!`
+                });
+                return;
+            }
+            const message = mre.text;
+            console.log(`got message ${message} from ${mre.user}`);
+            //
+            const response = await interaction.sorcerorpheus.handleUserMessage(message);
+            this.postResponseToSlack(response, interaction.threadInfo);
+        });
+
     }
 
-    handleViewSubmission(body: SlackViewAction, view: ViewOutput) {
+    async handleViewSubmission(body: SlackViewAction, view: ViewOutput) {
         // find the interaction that this view submission corresponds to
         // then find the action that corresponds to the view submission
         // and execute it via sorcerorpheus
@@ -84,7 +140,7 @@ export class InteractionManager {
                 throw new Error(`value is undefined in inputStates: ${inputStates}`);
             }
         }
-        interaction.sorcerorpheus.executeUserAction(actionName, parameters);
+        await interaction.sorcerorpheus.executeUserAction(actionName, parameters);
     }
 
     startApp(){
@@ -106,17 +162,13 @@ export class InteractionManager {
         const initialMessage = await this.app.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
             channel: channelID,
-            text: `<@${userID}> has started an interaction with ${sorcerorpheus.getBrain().getNpcName()}.`,
+            text: `<@${userID}>, reply to this message to talk to ${sorcerorpheus.getBrain().getNpcName()}!`,
         });
         if (initialMessage.ts === undefined){
             throw new Error("ts is undefined on initial message");
         }
         const threadInfo: ThreadInfo = {channelID, ts: initialMessage.ts};
-        this.currentInteractions.push({sorcerorpheus, threadInfo, userID});
-
-        // now we have to get the first message from the LLM
-        const firstMessage = await sorcerorpheus.startInteraction();
-        await this.postResponseToSlack(firstMessage, threadInfo);
+        this.currentInteractions.push({sorcerorpheus, threadInfo, userID});      
     }
 
     postResponseToSlack(firstMessage: ResponseForUser, threadInfo: ThreadInfo) {

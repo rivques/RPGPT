@@ -1,4 +1,5 @@
-import { LlmContext, LlmVariable, UserAction, BotAction } from "../scorcerorpheus/llm_interfaces";
+import { BagContext } from "../bag_interface/bag-context";
+import { LlmContext, UserAction, BotAction } from "../scorcerorpheus/llm_interfaces";
 
 export abstract class NpcBrain {
 	// these are functions instead of properties so that they can
@@ -6,7 +7,6 @@ export abstract class NpcBrain {
 	constructor() {};
 	abstract getNpcName(): string;
 	abstract getGamePrompt(): string;
-	abstract getVariables(): LlmVariable<any>[]; // not sure if there's a better way to TSify this
 	abstract getContext(): LlmContext[];
 	abstract getUserActions(): UserAction[];
 	abstract getBotActions(): BotAction[];

@@ -11,9 +11,11 @@
   "author": "rivques",
   "license": "GPL-3.0-or-later",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.19.0",
     "@slack/bolt": "^3.17.1",
     "@types/node": "^20.11.30",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "openai": "^4.29.2"
   },
   "devDependencies": {
     "typescript": "^5.4.3"
