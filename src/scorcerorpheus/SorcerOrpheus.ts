@@ -1,7 +1,7 @@
-import { LlmResponse, Message, UserAction } from "./LlmInterfaces";
+import { BagContext } from "../bag_interface/BagContext";
 import { ChatbotInterface } from "../chatbot_interfaces/ChatbotInterface";
 import { NpcBrain } from "../npc_brain/NpcBrain";
-import { BagContext } from "../bag_interface/BagContext";
+import { LlmResponse, Message, UserAction } from "./LlmInterfaces";
 
 export interface ResponseForUser {
     message?: string;
@@ -17,22 +17,22 @@ export class SorcerOrpheus {
     private system_prompt: string;
     private messages: Message[] = [];
     private bagContext: BagContext;
-    constructor(chatbotInterface: ChatbotInterface, brain: NpcBrain, bagContext: BagContext){
+    constructor(chatbotInterface: ChatbotInterface, brain: NpcBrain, bagContext: BagContext) {
         this.chatbotInterface = chatbotInterface;
         this.bagContext = bagContext;
         this.brain = brain;
         this.system_prompt = 'You are a character in an RPG. Players can interact with you, ' // this is the prompt that all bots have, it tells the model what's going on
-        + 'and you can respond to them. Format your responses in JSON format, according to the following schema ' // tweak it if you have systemic misbehavior
-        + '(use as many actions and parameters as appropriate):\n'
-        + '{'
-        + '  actionName: parameterObject'
-        + '}'
-        + 'for example:\n'
-        + '{ "Speak": { "message_to_user": "Hello, how are you?" } }\n'
-        + 'Only call actions that make sense in context. You must always call at least one action, '
-        + ' and you should usually Speak to the player. '
-        + "Here's your character:\n"
-        + this.brain.getGamePrompt();
+            + 'and you can respond to them. Format your responses in JSON format, according to the following schema ' // tweak it if you have systemic misbehavior
+            + '(use as many actions and parameters as appropriate):\n'
+            + '{'
+            + '  actionName: parameterObject'
+            + '}'
+            + 'for example:\n'
+            + '{ "Speak": { "message_to_user": "Hello, how are you?" } }\n'
+            + 'Only call actions that make sense in context. You must always call at least one action, '
+            + ' and you should usually Speak to the player. '
+            + "Here's your character:\n"
+            + this.brain.getGamePrompt();
     }
 
     getBrain(): NpcBrain {
@@ -40,7 +40,7 @@ export class SorcerOrpheus {
     }
 
     async handleUserMessage(userMessage: string): Promise<ResponseForUser> {
-        const userJson = this.constructUserJson("Speak", {"user-message": userMessage});
+        const userJson = this.constructUserJson("Speak", { "user-message": userMessage });
         return await this.handleUserAction(userJson);
     }
 
@@ -81,7 +81,7 @@ export class SorcerOrpheus {
         return result;
     }
 
-    constructUserJson(actionName: string, parameters: {[prompt: string]: string}): string {
+    constructUserJson(actionName: string, parameters: { [prompt: string]: string }): string {
         let result: any = {}; // go from a user's action to json ready to feed to the model
         result["user-action"] = actionName;
         result["parameters"] = parameters;

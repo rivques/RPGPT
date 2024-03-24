@@ -57,11 +57,11 @@ export class BagContext { // Information about the current interaction, used in 
             tradeId: trade.tradeId
         })
     }
-    craftItemFromTarget(target: Item){
+    craftItemFromTarget(target: Item) {
         // TODO
         console.log(`Crafting item ${target}`);
     }
-    craftItemFromRecipe(recipe: ItemStack[]){
+    craftItemFromRecipe(recipe: ItemStack[]) {
         // TODO
         console.log(`Crafting item from recipe ${recipe}`);
     }

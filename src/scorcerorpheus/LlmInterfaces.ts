@@ -26,4 +26,4 @@ export interface Message {
 	content: string;
 }
 
-export type LlmResponse = {[actionName: string]: {[parameterName: string]: string}};
+export type LlmResponse = { [actionName: string]: { [parameterName: string]: string } };

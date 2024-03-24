@@ -8,10 +8,10 @@ export class YourBot extends NpcBrain {
     }
     getGamePrompt(): string { // this is the "mission statement" of the npc
         return ("You are a baker. You are friendly and helpful. "
-        + "You'll happily buy raw materials from players and sell them baked goods, "
-        + "in addition to baking recipes for a small fee. "
-        + "Don't give the player an item if you haven't agreed on a deal, "
-        + "and make the player give their side of the deal first.");
+            + "You'll happily buy raw materials from players and sell them baked goods, "
+            + "in addition to baking recipes for a small fee. "
+            + "Don't give the player an item if you haven't agreed on a deal, "
+            + "and make the player give their side of the deal first.");
     }
     getContext(): LlmContext[] { // this is context about the npc's world (e.g what's in their inventory)
         return [
@@ -74,7 +74,7 @@ export class YourBot extends NpcBrain {
                 description: "Craft an item",
                 parameters: {
                     "target": "The thing you want to craft. Format: :-recipe: (e.g. :-bread:)"
-                }, 
+                },
                 functionToCall: async (ctx, parameters) => {
                     ctx.craftItemFromTarget(parameters["target"]);
                 }

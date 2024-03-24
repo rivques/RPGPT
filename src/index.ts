@@ -1,6 +1,4 @@
-import { App } from '@slack/bolt';
 import dotenv from 'dotenv';
-import fs from 'fs';
 import { InteractionManager } from './npc_brain/InteractionManager';
 import { InteractionManagerSettings } from './npc_brain/InteractionManagerSettings';
 
@@ -16,7 +14,7 @@ function getEnvVariable(name: string): string { // convenience function to make 
 }
 
 
-const settings: InteractionManagerSettings = {
+const settings: InteractionManagerSettings = { // this is the main settings object for the InteractionManager
   slackBotToken: getEnvVariable('SLACK_BOT_TOKEN'),
   slackSigningSecret: getEnvVariable('SLACK_SIGNING_SECRET'),
   slackAppPort: parseInt(getEnvVariable('SLACK_APP_PORT')),
@@ -29,7 +27,7 @@ const settings: InteractionManagerSettings = {
     model: "gpt-3.5-turbo",
     maxResponseTokens: 500
   },
-  httpsSettings: {
+  httpsSettings: { // remove this object if you don't want to use https (e.g, if ngrok is handling it)
     keyPath: getEnvVariable('HTTPS_KEY_PATH'),
     certPath: getEnvVariable('HTTPS_CERT_PATH')
   }

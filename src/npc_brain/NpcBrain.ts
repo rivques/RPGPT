@@ -1,10 +1,9 @@
-import { BagContext } from "../bag_interface/BagContext";
-import { LlmContext, UserAction, BotAction } from "../scorcerorpheus/LlmInterfaces";
+import { BotAction, LlmContext, UserAction } from "../scorcerorpheus/LlmInterfaces";
 
 export abstract class NpcBrain {
 	// these are functions instead of properties so that they can
 	// ...change over the course of an interaction
-	constructor() {};
+	constructor() { };
 	abstract getNpcName(): string;
 	abstract getGamePrompt(): string;
 	abstract getContext(): LlmContext[];

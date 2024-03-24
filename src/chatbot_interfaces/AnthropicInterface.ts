@@ -40,7 +40,7 @@ export class AnthropicInterface extends ChatbotInterface {
         } catch (e) {
             console.error("AnthropicInterface: error parsing Anthropic response into LlmResponse")
             console.error(e)
-            return {"Speak": {"message_to_user": "Error parsing Anthropic response into LlmResponse. Raw response: " + JSON.stringify(response)}}
+            return { "Speak": { "message_to_user": "Error parsing Anthropic response into LlmResponse. Raw response: " + JSON.stringify(response) } }
         }
     }
 }
