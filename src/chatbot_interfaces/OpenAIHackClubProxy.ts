@@ -10,16 +10,16 @@ export class OpenAIHackClubProxy extends ChatbotInterface {
     constructor(settings: LLMSettingsOpenAIProxy) {
         super();
         this.settings = settings;
-        this.openai = new OpenAI({apiKey: this.settings.llmAPIKey, baseURL: "http://jamsapi.hackclub.dev/openai/"});
+        this.openai = new OpenAI({apiKey: this.settings.llmAPIKey, baseURL: "http://jamsapi.hackclub.dev/openai/"}); // see #open-ai-token
     }
     async prompt(system: string, messages: Message[]): Promise<LlmResponse> {
         console.debug(`Prompting OpenAI with:`)
-        const openaimessages: ChatCompletionMessageParam[] = [{role: "system", content: system}]
+        const openaimessages: ChatCompletionMessageParam[] = [{role: "system", content: system}] // for openai, the system message is part of the messages parameter
         for (const message of messages) {
-            openaimessages.push({role: message.role, content: message.content})
+            openaimessages.push({role: message.role, content: message.content}) // convert from our Message to OpenAI's ChatCompletionMessageParam
         }
         console.debug(openaimessages);
-        const responses = await this.openai.chat.completions.create({
+        const responses = await this.openai.chat.completions.create({ // send the prompt to OpenAI
             model: this.settings.model,
             max_tokens: this.settings.maxResponseTokens,
             messages: openaimessages,

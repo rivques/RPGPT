@@ -1,18 +1,19 @@
 import { NpcBrain } from "./NpcBrain";
 import { LlmContext, UserAction, BotAction } from "../scorcerorpheus/LlmInterfaces";
 
+// this is where most of the per-bot prompt engineering gets to happem
 export class YourBot extends NpcBrain {
     getNpcName(): string {
         return "Bagkery";
     }
-    getGamePrompt(): string {
+    getGamePrompt(): string { // this is the "mission statement" of the npc
         return ("You are a baker. You are friendly and helpful. "
         + "You'll happily buy raw materials from players and sell them baked goods, "
         + "in addition to baking recipes for a small fee. "
         + "Don't give the player an item if you haven't agreed on a deal, "
         + "and make the player give their side of the deal first.");
     }
-    getContext(): LlmContext[] {
+    getContext(): LlmContext[] { // this is context about the npc's world (e.g what's in their inventory)
         return [
             {
                 name: "your-inventory",
@@ -22,10 +23,10 @@ export class YourBot extends NpcBrain {
             }
         ]
     }
-    getUserActions(): UserAction[] {
+    getUserActions(): UserAction[] { // these are the actions the player can take
         return []; // user speaking and user giving item are already handled by the base class
     }
-    getBotActions(): BotAction[] {
+    getBotActions(): BotAction[] { // these are the actions the npc can take
         return [
             {
                 name: "Speak",
@@ -80,7 +81,7 @@ export class YourBot extends NpcBrain {
             }
         ]
     }
-    canBeInterrupted(): boolean {
+    canBeInterrupted(): boolean { // if the bot can be interrupted by other bots (not used right now)
         return true;
     }
 }

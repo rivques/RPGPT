@@ -12,7 +12,7 @@ export interface HTTPSSettings {
     keyPath: string;
     certPath: string;
 }
-interface LLMSettingsBase {
+interface LLMSettingsBase { // this bit of TS fun allows different LLMs to have different settings while maintaining type safety
     maxResponseTokens: number;
 }
 export interface LLMSettingsAnthropic extends LLMSettingsBase {

@@ -13,7 +13,7 @@ export class AnthropicInterface extends ChatbotInterface {
     }
     async prompt(system: string, messages: Message[]): Promise<LlmResponse> {
         messages.push({ role: "assistant", content: "{\"" }); // prefill the start of json
-        console.debug(`Prompting Claude 3 Haiku with: system: ${system}\nmessages: ${messages}`)
+        console.debug(`Prompting Anthropic with: system: ${system}\nmessages: ${messages}`)
         const response = await this.anthropic.messages.create({
             model: this.settings.model,
             max_tokens: this.settings.maxResponseTokens,
@@ -26,8 +26,7 @@ export class AnthropicInterface extends ChatbotInterface {
         }
         // now, translate response.content to LlmResponse
         // response.content's concatenated text values should be a JSON string parseable into an LLMResponse
-        // first, concatenate response.content[].text
-        let concatenatedText = "{\""
+        let concatenatedText = "{\"" // this api can return multiple blocks, we should put them together
         for (const message of response.content) {
             concatenatedText += message.text
             concatenatedText += " "

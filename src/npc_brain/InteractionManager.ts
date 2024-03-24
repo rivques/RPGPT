@@ -9,7 +9,7 @@ import { DummyLLMInterface } from "../chatbot_interfaces/DummyLLMInterface";
 import { BagContext } from "../bag_interface/BagContext";
 import { App as BagApp } from "@hackclub/bag";
 import { InteractionManagerSettings, LLMSettingsAnthropic, LLMSettingsOpenAI } from "./InteractionManagerSettings";
-interface Interaction {
+interface Interaction { // one thread with one player
     sorcerorpheus: SorcerOrpheus;
     threadInfo: ThreadInfo;
     userID: string;
@@ -21,25 +21,23 @@ interface ThreadInfo {
 }
 
 export class InteractionManager {
-    // this is the glue between the LLM, the NPC brain, the user, and Bag
-    // it handles:
-    // - interaction setup (e.g. configuing the LLM)
-    // - converting between Slack and LLM interfaces
-    // - user input and passing through the brain to sorcerorpheus
-    // - executing sorcerorpheus's actions
-    // - semi-graceful error recovery
+    // this is the glue between the Sorcerorpheus (itself a glue between the chatbot interface and the NPC) and the SlackApp
+    // it's also the main entry point for the app
+
     slackApp: SlackApp;
     chatbotInterface: ChatbotInterface;
     bagApp: BagApp;
+
     currentInteractions: Interaction[] = [];
-    INTERACTION_CHANNELS = ["C06QL7WMRLK"];
+    INTERACTION_CHANNELS = ["C06QL7WMRLK"]; // TODO: move this to env vars
     settings: InteractionManagerSettings;
+
     private constructor(settings: InteractionManagerSettings, slackApp: SlackApp, chatbotInterface: ChatbotInterface, bagApp: BagApp){
         this.settings = settings;
         this.slackApp = slackApp;
         this.chatbotInterface = chatbotInterface;
         this.bagApp = bagApp;
-        for (const channelID of this.INTERACTION_CHANNELS){
+        for (const channelID of this.INTERACTION_CHANNELS){ // join all the interaction channels
             this.slackApp.client.conversations.join({
                 token: settings.slackBotToken,
                 channel: channelID
@@ -63,7 +61,7 @@ export class InteractionManager {
                 }
             }
         });
-        // Listen for a slash command
+        // slash commands
         slackApp.command('/bagkery-ping', async ({ command, ack, say }) => {
             await ack();
             await say(`Pong, <@${command.user_id}>!`);
@@ -79,7 +77,7 @@ export class InteractionManager {
             }
             await this.handleActionButtonPressed(blockAction as BlockAction<ButtonAction>);
         })
-
+        // view submissions (for non-speak non-give user actions)
         slackApp.view('user_input', async ({ ack, body, view }) => {
             await ack();
             console.log("got view submission");
@@ -87,7 +85,7 @@ export class InteractionManager {
             console.log(view.state.values);
             await this.handleViewSubmission(body, view);
         });
-
+        // messages, for when the user talks to the NPC
         slackApp.event("message", async ({ event, body }) => {
             console.log("got message_replied event");
             console.log(event);
@@ -113,7 +111,7 @@ export class InteractionManager {
             const message = mre.text;
             console.log(`got message ${message} from ${mre.user}`);
             //
-            const response = await interaction.sorcerorpheus.handleUserMessage(message);
+            const response = await interaction.sorcerorpheus.handleUserMessage(message); // this is where the bulk of the magic happens
             this.postResponseToSlack(response, interaction.threadInfo);
         });
     }
@@ -168,10 +166,10 @@ export class InteractionManager {
                 throw new Error(`value is undefined in inputStates: ${inputStates}`);
             }
         }
-        await interaction.sorcerorpheus.executeUserAction(actionName, parameters);
+        await interaction.sorcerorpheus.handleUserActionButton(actionName, parameters);
     }
 
-    startApp(){
+    startApp(){ // this is what index.ts calls to start running
         (async () => {
             let httpsServerSettings = undefined;
             if (this.settings.httpsSettings !== undefined){
@@ -187,10 +185,8 @@ export class InteractionManager {
     }
 
     async handleStartInteractionCommand(command: SlashCommand, ack: AckFn<string | RespondArguments>, respond: RespondFn ){
-        // pseudocode:
-        // initialize a new sorcerorpheus instance
-        // post a "user is interacting with NPC" message to some channel
-        // then pass the result of that instantiation back to the user as a threaded reply, with buttons according to sorcerorpheus
+        // start an interaction with the user who sent the command
+        // this involves creating a new SorcerOrpheus (with some context), posting a message to slack, and adding the interaction to currentInteractions
         await ack();
         const sorcerorpheus = new SorcerOrpheus(this.chatbotInterface, new YourBot(), new BagContext(this.bagApp, command.user_id, this.settings.bagOwnerID));
         const userID = command.user_id;
@@ -209,8 +205,9 @@ export class InteractionManager {
 
     postResponseToSlack(responseToShow: ResponseForUser, threadInfo: ThreadInfo) {
         // construct the message to post to slack from the response
-        // then post it to the thread
-        if(responseToShow.message === undefined && responseToShow.actions.length === 0){
+        // this is pretty much constructing any buttons we might need and the message itself
+        // then post it to the interaction thread
+        if(responseToShow.message === undefined && responseToShow.actions.length === 0){ // save ourselves some work
             console.debug("not sending message because it's empty");
             return;
         }
@@ -226,7 +223,7 @@ export class InteractionManager {
                 }
             }
         ];
-        for (const action of responseToShow.actions){
+        for (const action of responseToShow.actions){ // add a button for each user action
             blocks.push({
                 type: "actions",
                 elements: [
@@ -242,7 +239,7 @@ export class InteractionManager {
             });
         }
 
-        this.slackApp.client.chat.postMessage({
+        this.slackApp.client.chat.postMessage({ // and send the whole mess to Slack
             token: this.settings.slackBotToken,
             channel: threadInfo.channelID,
             thread_ts: threadInfo.ts,
@@ -280,7 +277,7 @@ export class InteractionManager {
         // each parameter in the action corresponds to a field in the modal
 
         const modalBlocks: any[] = [];
-        for (const parameter of actionToExecute.parameters){
+        for (const parameter of actionToExecute.parameters){ // add a user input box for each parameter
             let element;
             switch (parameter.type){
                 case "string":
@@ -344,7 +341,7 @@ export class InteractionManager {
                 }
             });
         }
-        this.slackApp.client.views.open({
+        this.slackApp.client.views.open({ // and show the whole thing to the user
             token: this.settings.slackBotToken,
             trigger_id: action.trigger_id,
             view: {
