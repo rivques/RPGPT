@@ -1,5 +1,5 @@
-import { NpcBrain } from "./npc_brain";
-import { LlmContext, UserAction, BotAction } from "../scorcerorpheus/llm_interfaces";
+import { NpcBrain } from "./NpcBrain";
+import { LlmContext, UserAction, BotAction } from "../scorcerorpheus/LlmInterfaces";
 
 export class YourBot extends NpcBrain {
     getNpcName(): string {
@@ -56,7 +56,7 @@ export class YourBot extends NpcBrain {
                 },
                 functionToCall: async (ctx, parameters) => {
                     await ctx.proposeTrade(
-                        ctx.playerID,
+                        ctx.interactingPlayerID,
                         [{
                             item: parameters["item-given"],
                             quantity: Number(parameters["given-count"])

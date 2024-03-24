@@ -1,19 +1,22 @@
-import { Message, LlmResponse } from "../scorcerorpheus/llm_interfaces";
-import { ChatbotInterface } from "./chatbot_interface";
+import { LLMSettingsAnthropic } from "../npc_brain/InteractionManagerSettings";
+import { Message, LlmResponse } from "../scorcerorpheus/LlmInterfaces";
+import { ChatbotInterface } from "./ChatbotInterface";
 import Anthropic from "@anthropic-ai/sdk";
 
 export class AnthropicInterface extends ChatbotInterface {
     anthropic: Anthropic
-    constructor(anthropicKey: string) {
+    settings: LLMSettingsAnthropic
+    constructor(settings: LLMSettingsAnthropic) {
         super();
-        this.anthropic = new Anthropic({ apiKey: anthropicKey })
+        this.settings = settings
+        this.anthropic = new Anthropic({ apiKey: settings.llmAPIKey })
     }
     async prompt(system: string, messages: Message[]): Promise<LlmResponse> {
         messages.push({ role: "assistant", content: "{\"" }); // prefill the start of json
         console.debug(`Prompting Claude 3 Haiku with: system: ${system}\nmessages: ${messages}`)
         const response = await this.anthropic.messages.create({
-            model: "claude-3-sonnet-20240229", //"claude-3-haiku-20240307",
-            max_tokens: 512,
+            model: this.settings.model,
+            max_tokens: this.settings.maxResponseTokens,
             messages,
             system,
             temperature: 0.3

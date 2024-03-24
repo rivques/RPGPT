@@ -1,14 +1,14 @@
-import { Item, PlayerID, ItemStack } from "./bag-types";
+import { Item, PlayerID, ItemStack } from "./BagTypes";
 import { App } from "@hackclub/bag";
 
 export class BagContext {
-    // singleton class
-    private static instance: BagContext;
     private bagApp!: App
-    playerID: PlayerID;
-    constructor(app: App, playerID: PlayerID) {
+    interactingPlayerID: PlayerID;
+    ownerID: PlayerID;
+    constructor(app: App, interactingPlayerID: PlayerID, ownerID: PlayerID) {
         this.bagApp = app
-        this.playerID = playerID;
+        this.interactingPlayerID = interactingPlayerID;
+        this.ownerID = ownerID;
     }
     giveItem(item: string) {
         // TODO
@@ -17,7 +17,7 @@ export class BagContext {
     async getInventory(player: PlayerID | undefined): Promise<ItemStack[]> {
         // TODO
         const inventory: any[] = await this.bagApp.getInventory({
-            identityId: player ?? this.playerID,
+            identityId: player ?? this.ownerID,
             available: true
         })
         let result: ItemStack[] = []

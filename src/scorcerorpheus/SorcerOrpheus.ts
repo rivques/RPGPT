@@ -1,7 +1,7 @@
-import { LlmResponse, Message, UserAction } from "./llm_interfaces";
-import { ChatbotInterface } from "../chatbot_interfaces/chatbot_interface";
-import { NpcBrain } from "../npc_brain/npc_brain";
-import { BagContext } from "../bag_interface/bag-context";
+import { LlmResponse, Message, UserAction } from "./LlmInterfaces";
+import { ChatbotInterface } from "../chatbot_interfaces/ChatbotInterface";
+import { NpcBrain } from "../npc_brain/NpcBrain";
+import { BagContext } from "../bag_interface/BagContext";
 
 export interface ResponseForUser {
     message?: string;

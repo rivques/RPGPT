@@ -1,13 +1,16 @@
 import { ChatCompletionMessageParam, ChatCompletionSystemMessageParam } from "openai/resources";
-import { Message, LlmResponse } from "../scorcerorpheus/llm_interfaces";
-import { ChatbotInterface } from "./chatbot_interface";
+import { Message, LlmResponse } from "../scorcerorpheus/LlmInterfaces";
+import { ChatbotInterface } from "./ChatbotInterface";
 import OpenAI from "openai";
+import { LLMSettingsOpenAI as LLMSettingsOpenAIProxy } from "../npc_brain/InteractionManagerSettings";
 
 export class OpenAIHackClubProxy extends ChatbotInterface {
     openai: OpenAI;
-    constructor(apiKey: string) {
+    settings: LLMSettingsOpenAIProxy;
+    constructor(settings: LLMSettingsOpenAIProxy) {
         super();
-        this.openai = new OpenAI({apiKey, baseURL: "http://jamsapi.hackclub.dev/openai/"});
+        this.settings = settings;
+        this.openai = new OpenAI({apiKey: this.settings.llmAPIKey, baseURL: "http://jamsapi.hackclub.dev/openai/"});
     }
     async prompt(system: string, messages: Message[]): Promise<LlmResponse> {
         console.debug(`Prompting OpenAI with:`)
@@ -17,8 +20,8 @@ export class OpenAIHackClubProxy extends ChatbotInterface {
         }
         console.debug(openaimessages);
         const responses = await this.openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            max_tokens: 512,
+            model: this.settings.model,
+            max_tokens: this.settings.maxResponseTokens,
             messages: openaimessages,
             response_format: {"type": "json_object"}
         })

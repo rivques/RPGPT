@@ -1,5 +1,5 @@
-import { LlmResponse, Message } from "../scorcerorpheus/llm_interfaces"
-import { ChatbotInterface } from "./chatbot_interface"
+import { LlmResponse, Message } from "../scorcerorpheus/LlmInterfaces"
+import { ChatbotInterface } from "./ChatbotInterface"
 
 export class DummyLLMInterface extends ChatbotInterface {
     async prompt(system: string, messages: Message[]): Promise<LlmResponse> {

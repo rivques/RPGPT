@@ -1,4 +1,4 @@
-import { BagContext } from "../bag_interface/bag-context";
+import { BagContext } from "../bag_interface/BagContext";
 
 export interface UserAction { // an action the user can take
 	name: string;
