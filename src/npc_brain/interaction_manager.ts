@@ -1,11 +1,13 @@
-import { App, SlashCommand, AckFn, RespondFn, RespondArguments, BlockAction, ButtonAction, Block, SlackViewAction, ViewOutput, MessageRepliedEvent } from "@slack/bolt";
+import { App as SlackApp, SlashCommand, AckFn, RespondFn, RespondArguments, BlockAction, ButtonAction, Block, SlackViewAction, ViewOutput, MessageRepliedEvent } from "@slack/bolt";
 import fs from "fs";
 import { SorcerOrpheus, ResponseForUser } from "../scorcerorpheus/scorcerorpheus";
 import { ChatbotInterface } from "../chatbot_interfaces/chatbot_interface";
 import { YourBot } from "./your_bot";
 import { AnthropicInterface } from "../chatbot_interfaces/anthropic";
 import { OpenAIHackClubProxy } from "../chatbot_interfaces/openai_hackclub_proxy";
-
+import { DummyLLMInterface } from "../chatbot_interfaces/dummy_interface";
+import { BagContext } from "../bag_interface/bag-context";
+import { App as BagApp } from "@hackclub/bag";
 interface Interaction {
     sorcerorpheus: SorcerOrpheus;
     threadInfo: ThreadInfo;
@@ -25,24 +27,33 @@ export class InteractionManager {
     // - user input and passing through the brain to sorcerorpheus
     // - executing sorcerorpheus's actions
     // - semi-graceful error recovery
-    app: App;
+    slackApp: SlackApp;
     chatbotInterface: ChatbotInterface;
+    bagApp!: BagApp;
     currentInteractions: Interaction[] = [];
     INTERACTION_CHANNELS = ["C06QL7WMRLK"];
 
-    constructor(app: App){
+    constructor(app: SlackApp){
         this.chatbotInterface = new OpenAIHackClubProxy(process.env.LLM_API_KEY ?? "put ur key in the env variable");
-        
-        this.app = app;
+        (async () => {
+            this.bagApp = await BagApp.connect({
+              appId: Number(process.env.BAG_APP_ID),
+              key: process.env.BAG_APP_KEY ?? "bag api key not found",
+            })
+        })();
+        if (this.bagApp === undefined){
+            throw new Error("bagApp is undefined. this means async doesn't work how rivques thinks it works, go yell at him");
+        }
+        this.slackApp = app;
         for (const channelID of this.INTERACTION_CHANNELS){
-            this.app.client.conversations.join({
+            this.slackApp.client.conversations.join({
                 token: process.env.SLACK_BOT_TOKEN,
                 channel: channelID
             });
             console.info(`joined channel ${channelID}`);
         }
         // leave all channels except the interaction channels
-        this.app.client.users.conversations({
+        this.slackApp.client.users.conversations({
             token: process.env.SLACK_BOT_TOKEN
         }).then((response) => {
             if (response.channels === undefined){
@@ -50,7 +61,7 @@ export class InteractionManager {
             }
             for (const channel of response.channels){
                 if (channel.id !== undefined && !this.INTERACTION_CHANNELS.includes(channel.id)){
-                    this.app.client.conversations.leave({
+                    this.slackApp.client.conversations.leave({
                         token: process.env.SLACK_BOT_TOKEN,
                         channel: channel.id
                     });
@@ -97,7 +108,7 @@ export class InteractionManager {
                 return;
             }
             if (interaction.userID !== mre.user){
-                this.app.client.chat.postEphemeral({
+                this.slackApp.client.chat.postEphemeral({
                     token: process.env.SLACK_BOT_TOKEN,
                     channel: mre.channel,
                     user: mre.user,
@@ -145,7 +156,7 @@ export class InteractionManager {
 
     startApp(){
         (async () => {
-            await this.app.start(process.env.PORT || 3000, {key: fs.readFileSync(process.env.TLS_KEY_PATH ?? "put ur paths in the env variable"), cert: fs.readFileSync(process.env.TLS_CERT_PATH ?? "put ur paths in the env variable")});
+            await this.slackApp.start(process.env.PORT || 3000, {key: fs.readFileSync(process.env.TLS_KEY_PATH ?? "put ur paths in the env variable"), cert: fs.readFileSync(process.env.TLS_CERT_PATH ?? "put ur paths in the env variable")});
             console.log('⚡️ Bolt app is running!');
           })();
     }
@@ -156,10 +167,10 @@ export class InteractionManager {
         // post a "user is interacting with NPC" message to some channel
         // then pass the result of that instantiation back to the user as a threaded reply, with buttons according to sorcerorpheus
         await ack();
-        const sorcerorpheus = new SorcerOrpheus(this.chatbotInterface, new YourBot());
+        const sorcerorpheus = new SorcerOrpheus(this.chatbotInterface, new YourBot(), new BagContext(this.bagApp, command.user_id));
         const userID = command.user_id;
         const channelID = command.channel_id;
-        const initialMessage = await this.app.client.chat.postMessage({
+        const initialMessage = await this.slackApp.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
             channel: channelID,
             text: `<@${userID}>, reply to this message to talk to ${sorcerorpheus.getBrain().getNpcName()}!`,
@@ -171,19 +182,26 @@ export class InteractionManager {
         this.currentInteractions.push({sorcerorpheus, threadInfo, userID});      
     }
 
-    postResponseToSlack(firstMessage: ResponseForUser, threadInfo: ThreadInfo) {
+    postResponseToSlack(responseToShow: ResponseForUser, threadInfo: ThreadInfo) {
         // construct the message to post to slack from the response
         // then post it to the thread
+        if(responseToShow.message === undefined && responseToShow.actions.length === 0){
+            console.debug("not sending message because it's empty");
+            return;
+        }
+        if(responseToShow.message === undefined){
+            responseToShow.message = "(I chose not to speak, but here are some actions you can take:)";
+        }
         const blocks: any[] = [ // i don't think this is typeable
             {
                 type: "section",
                 text: {
                     type: "mrkdwn",
-                    text: firstMessage.message
+                    text: responseToShow.message
                 }
             }
         ];
-        for (const action of firstMessage.actions){
+        for (const action of responseToShow.actions){
             blocks.push({
                 type: "actions",
                 elements: [
@@ -199,12 +217,12 @@ export class InteractionManager {
             });
         }
 
-        this.app.client.chat.postMessage({
+        this.slackApp.client.chat.postMessage({
             token: process.env.SLACK_BOT_TOKEN,
             channel: threadInfo.channelID,
             thread_ts: threadInfo.ts,
             blocks: blocks,
-            text: firstMessage.message
+            text: responseToShow.message
         });
     }
 
@@ -217,7 +235,7 @@ export class InteractionManager {
             throw new Error("interaction not found");
         }
         if (interaction.userID !== action.user.id){
-            this.app.client.chat.postEphemeral({
+            this.slackApp.client.chat.postEphemeral({
                 token: process.env.SLACK_BOT_TOKEN,
                 channel: action.container.channel_id,
                 user: action.user.id,
@@ -301,7 +319,7 @@ export class InteractionManager {
                 }
             });
         }
-        this.app.client.views.open({
+        this.slackApp.client.views.open({
             token: process.env.SLACK_BOT_TOKEN,
             trigger_id: action.trigger_id,
             view: {

@@ -32,22 +32,17 @@ export class OpenAIHackClubProxy extends ChatbotInterface {
         }
         if (response.message.content == undefined) {
             console.error("OpenAIHackClubProxy: error parsing OpenAI response into LlmResponse")
-            return {
-                message: "Error parsing OpenAI response into LlmResponse. Raw response: " + response,
-                actions: {}
-            }
+            return {"Speak": {"message_to_user": "Error parsing OpenAI response into LlmResponse. Raw response: " + JSON.stringify(response)}}
+            
         }
-
+        console.debug(`Message: ${response.message.content}`)
         try {
             const llmResponse: LlmResponse = JSON.parse(response.message.content)
             return llmResponse
         } catch (e) {
             console.error("OpenAIHackClubProxy: error parsing gpt response into LlmResponse")
             console.error(e)
-            return {
-                message: "Error parsing Anthropic response into LlmResponse. Raw response: " + response.message.content,
-                actions: {}
-            }
+            return {"Speak": {"message_to_user": "Error parsing gpt response into LlmResponse. Raw response: " + JSON.stringify(response)}}
         }
     }
 }

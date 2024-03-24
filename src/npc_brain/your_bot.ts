@@ -8,7 +8,7 @@ export class YourBot extends NpcBrain {
     getGamePrompt(): string {
         return ("You are a baker. You are friendly and helpful. "
         + "You'll happily buy raw materials from players and sell them baked goods, "
-        + "in addition to baking recipes for a small fee."
+        + "in addition to baking recipes for a small fee. "
         + "Don't give the player an item if you haven't agreed on a deal, "
         + "and make the player give their side of the deal first.");
     }
@@ -16,8 +16,8 @@ export class YourBot extends NpcBrain {
         return [
             {
                 name: "your-inventory",
-                valueFunction: (ctx) => {
-                    return ctx.getInventory(undefined);
+                valueFunction: async (ctx) => {
+                    return await ctx.getInventory(undefined);
                 }
             }
         ]
@@ -28,21 +28,44 @@ export class YourBot extends NpcBrain {
     getBotActions(): BotAction[] {
         return [
             {
-                name: "End interaction",
-                description: "End the interaction with the player",
-                parameters: {},
-                functionToCall: (ctx, parameters) => {
-                    ctx.endInteraction();
+                name: "Speak",
+                description: "Speak to the player",
+                parameters: {
+                    "message_to_user": "The message you want to say to the player"
+                },
+                functionToCall: async (ctx, parameters) => {
+                    // handeled elsewhere
                 }
             },
             {
-                name: "Give item",
-                description: "Give the player an item",
+                name: "End interaction",
+                description: "End the interaction with the player",
+                parameters: {},
+                functionToCall: async (ctx, parameters) => {
+                    // do nothing
+                }
+            },
+            {
+                name: "Initiate trade",
+                description: "Offer the player a trade",
                 parameters: {
-                    "item": "The item you want to give to the player. Format: :-item: (e.g. :-sword:)"
+                    "item-given": "The item you want to give to the player. Format: :-item: (e.g. :-sword:)",
+                    "given-count": "The number of items you want to give to the player",
+                    "item-received": "The item you want to receive from the player. Format: :-item: (e.g. :-bread:)",
+                    "received-count": "The number of items you want to receive from the player"
                 },
-                functionToCall: (ctx, parameters) => {
-                    ctx.giveItem(parameters["item"]);
+                functionToCall: async (ctx, parameters) => {
+                    await ctx.proposeTrade(
+                        ctx.playerID,
+                        [{
+                            item: parameters["item-given"],
+                            quantity: Number(parameters["given-count"])
+                        }],
+                        [{
+                            item: parameters["item-received"],
+                            quantity: Number(parameters["received-count"])
+                        }]
+                    );
                 }
             },
             {
@@ -51,7 +74,7 @@ export class YourBot extends NpcBrain {
                 parameters: {
                     "target": "The thing you want to craft. Format: :-recipe: (e.g. :-bread:)"
                 }, 
-                functionToCall: (ctx, parameters) => {
+                functionToCall: async (ctx, parameters) => {
                     ctx.craftItemFromTarget(parameters["target"]);
                 }
             }

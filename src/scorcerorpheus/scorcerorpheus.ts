@@ -1,10 +1,10 @@
-import { Message, UserAction } from "./llm_interfaces";
+import { LlmResponse, Message, UserAction } from "./llm_interfaces";
 import { ChatbotInterface } from "../chatbot_interfaces/chatbot_interface";
 import { NpcBrain } from "../npc_brain/npc_brain";
 import { BagContext } from "../bag_interface/bag-context";
 
 export interface ResponseForUser {
-    message: string;
+    message?: string;
     actions: UserAction[];
 }
 
@@ -16,17 +16,21 @@ export class SorcerOrpheus {
     private brain: NpcBrain;
     private system_prompt: string;
     private messages: Message[] = [];
-    constructor(chatbotInterface: ChatbotInterface, brain: NpcBrain){
+    private bagContext: BagContext;
+    constructor(chatbotInterface: ChatbotInterface, brain: NpcBrain, bagContext: BagContext){
         this.chatbotInterface = chatbotInterface;
+        this.bagContext = bagContext;
         this.brain = brain;
         this.system_prompt = 'You are a character in an RPG. Players can interact with you, '
         + 'and you can respond to them. Format your responses in JSON format, according to the following schema '
         + '(use as many actions and parameters as appropriate):\n'
         + '{'
-        + 'message: string;'
-        + 'actions: {[actionName: string]: {[parameterName: string]: string}}'
+        + '  actionName: parameterObject'
         + '}'
-        + 'Only call actions that make sense in context. It\'s okay not to call an action and just respond to the user.'
+        + 'for example:\n'
+        + '{ "Speak": { "message_to_user": "Hello, how are you?" } }\n'
+        + 'Only call actions that make sense in context. You must always call at least one action, '
+        + ' and you should usually Speak to the player. '
         + "Here's your character:\n"
         + this.brain.getGamePrompt();
     }
@@ -43,19 +47,29 @@ export class SorcerOrpheus {
     private async handleUserAction(userJson: string) {
         this.messages.push({ role: "user", content: userJson });
         const response = await this.chatbotInterface.prompt(this.system_prompt, this.messages);
-        this.messages.pop();
-        this.messages.push({ role: "assistant", content: response.message });
-        this.handleBotActions(response.actions);
+        this.messages.push({ role: "assistant", content: JSON.stringify(response) });
+        const lastUserMessage = JSON.parse(this.messages[this.messages.length - 2].content);
+        this.messages[this.messages.length - 2].content = JSON.stringify({ // simplify user message so we don't send kilotokens of old bot actions
+            "user-action": lastUserMessage["user-action"],
+            "parameters": lastUserMessage["parameters"],
+            "context": lastUserMessage["context"]
+        });
+        const messageForUser = this.handleBotActionsAndReturnMessage(response);
         const possibleUserActions = this.brain.getUserActions();
         return {
-            actions: possibleUserActions,
-            message: response.message
+            message: messageForUser,
+            actions: possibleUserActions
         };
     }
 
-    handleBotActions(actions: { [actionName: string]: { [parameterName: string]: string; }; }) {
+    handleBotActionsAndReturnMessage(actions: LlmResponse): string | undefined {
+        let result;
         for (const actionName in actions) {
             const parameters = actions[actionName];
+            if (actionName === "Speak") {
+                result = parameters["message_to_user"];
+                continue;
+            }
             this.brain.getBotActions().find((botAction) => {
                 if (botAction.name === actionName) {
                     botAction.functionToCall(this.getBagContext(), parameters);
@@ -64,6 +78,7 @@ export class SorcerOrpheus {
                 return false;
             })
         }
+        return result;
     }
 
     constructUserJson(actionName: string, parameters: {[prompt: string]: string}): string {
@@ -80,7 +95,7 @@ export class SorcerOrpheus {
         return JSON.stringify(result);
     }
     getBagContext(): BagContext {
-        return new BagContext();
+        return this.bagContext;
     }
 
     async executeUserAction(actionName: string, parameters: { [user_label: string]: string; }) {
