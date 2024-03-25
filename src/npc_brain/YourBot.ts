@@ -18,7 +18,7 @@ export class YourBot extends NpcBrain {
             {
                 name: "your-inventory",
                 valueFunction: async (ctx) => {
-                    return await ctx.getInventory(undefined);
+                    return await ctx.getInventory(undefined,  ["Bread", "Flour", "Wheat", "Firewood"]);
                 }
             }
         ]
@@ -50,9 +50,9 @@ export class YourBot extends NpcBrain {
                 name: "Initiate trade",
                 description: "Offer the player a trade",
                 parameters: {
-                    "item-given": "The item you want to give to the player. Format: :-item: (e.g. :-sword:)",
+                    "item-given": "The item you want to give to the player. Format: Item (e.g. Wheat)",
                     "given-count": "The number of items you want to give to the player",
-                    "item-received": "The item you want to receive from the player. Format: :-item: (e.g. :-bread:)",
+                    "item-received": "The item you want to receive from the player. Format: Item (e.g. Wheat)",
                     "received-count": "The number of items you want to receive from the player"
                 },
                 functionToCall: async (ctx, parameters) => {

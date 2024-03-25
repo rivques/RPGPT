@@ -29,7 +29,7 @@ export class InteractionManager {
     bagApp: BagApp;
 
     currentInteractions: Interaction[] = [];
-    INTERACTION_CHANNELS = ["C06QL7WMRLK"]; // TODO: move this to env vars
+    INTERACTION_CHANNELS = ["C06QL7WMRLK", "C06R09H8GQ6"]; // TODO: move this to env vars
     settings: InteractionManagerSettings;
 
     private constructor(settings: InteractionManagerSettings, slackApp: SlackApp, chatbotInterface: ChatbotInterface, bagApp: BagApp) {

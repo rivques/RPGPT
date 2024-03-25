@@ -40,7 +40,7 @@ export class SorcerOrpheus {
     }
 
     async handleUserMessage(userMessage: string): Promise<ResponseForUser> {
-        const userJson = this.constructUserJson("Speak", { "user-message": userMessage });
+        const userJson = await this.constructUserJson("Speak", { "user-message": userMessage });
         return await this.handleUserAction(userJson);
     }
 
@@ -81,16 +81,19 @@ export class SorcerOrpheus {
         return result;
     }
 
-    constructUserJson(actionName: string, parameters: { [prompt: string]: string }): string {
+    async constructUserJson(actionName: string, parameters: { [prompt: string]: string }): Promise<string> {
         let result: any = {}; // go from a user's action to json ready to feed to the model
         result["user-action"] = actionName;
         result["parameters"] = parameters;
-        result["context"] = this.brain.getContext().map((context) => { // retreive context of the world
-            return {
-                name: context.name,
-                value: context.valueFunction(this.getBagContext())
-            }
-        });
+        result["context"] = {}
+        for (let context of this.brain.getContext()){ // retreive context of the world
+            const value = await context.valueFunction(this.getBagContext());
+            console.log(`context ${context.name}: `)
+            console.log(value)
+            result["context"][context.name] = value;
+        };
+        console.log("context:")
+        console.log(result["context"])
         result["possible-bot-actions"] = this.brain.getBotActions(); // tell the bot what it can do
         return JSON.stringify(result);
     }
@@ -100,7 +103,7 @@ export class SorcerOrpheus {
 
     async handleUserActionButton(actionName: string, parameters: { [user_label: string]: string; }) {
         console.log(`Executing user action ${actionName} with parameters ${parameters}`);
-        const userJson = this.constructUserJson(actionName, parameters);
+        const userJson = await this.constructUserJson(actionName, parameters);
         return await this.handleUserAction(userJson);
     }
 }
