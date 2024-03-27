@@ -2,6 +2,7 @@ export interface InteractionManagerSettings {
     slackBotToken: string;
     slackSigningSecret: string;
     slackAppPort: number;
+    interactionChannels: string;
     bagAppID: number;
     bagAppKey: string;
     bagOwnerID: string;

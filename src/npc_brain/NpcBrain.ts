@@ -1,13 +1,11 @@
 import { BotAction, LlmContext, UserAction } from "../scorcerorpheus/LlmInterfaces";
 
 export abstract class NpcBrain {
-	// these are functions instead of properties so that they can
-	// ...change over the course of an interaction
+	// all the things a brain needs to do
 	constructor() { };
 	abstract getNpcName(): string;
 	abstract getGamePrompt(): string;
 	abstract getContext(): LlmContext[];
 	abstract getUserActions(): UserAction[];
 	abstract getBotActions(): BotAction[];
-	abstract canBeInterrupted(): boolean;
 }

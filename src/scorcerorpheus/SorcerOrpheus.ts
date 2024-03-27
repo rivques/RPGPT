@@ -44,17 +44,16 @@ export class SorcerOrpheus {
         return await this.handleUserAction(userJson);
     }
 
-    private async handleUserAction(userJson: string) {
+    private async handleUserAction(userJson: string): Promise<ResponseForUser>{
         this.messages.push({ role: "user", content: userJson }); // add the user's message to what the LLM will see
         const response = await this.chatbotInterface.prompt(this.system_prompt, this.messages); // send the prompt to the LLM
         this.messages.push({ role: "assistant", content: JSON.stringify(response) }); // add the LLM's response to history
         const lastUserMessage = JSON.parse(this.messages[this.messages.length - 2].content);
-        this.messages[this.messages.length - 2].content = JSON.stringify({ // simplify user message so we don't send kilotokens of old bot actions
+        this.messages[this.messages.length - 2].content = JSON.stringify({ // simplify user message so we don't send kilotokens of old context and bot actions
             "user-action": lastUserMessage["user-action"],
             "parameters": lastUserMessage["parameters"],
-            "context": lastUserMessage["context"]
         });
-        const messageForUser = this.handleBotActionsAndReturnMessage(response); // actually execute what the bot wants to do
+        const messageForUser = await this.handleBotActionsAndReturnMessage(response); // actually execute what the bot wants to do
         const possibleUserActions = this.brain.getUserActions(); // figure out what the user can do
         return {
             message: messageForUser,
@@ -62,23 +61,20 @@ export class SorcerOrpheus {
         };
     }
 
-    handleBotActionsAndReturnMessage(actions: LlmResponse): string | undefined { // execute the bot's whims and return what the bot wants to say
-        let result;
+    async handleBotActionsAndReturnMessage(actions: LlmResponse): Promise<string | undefined> { // execute the bot's whims and return what the bot wants to say
+        let result = "";
         for (const actionName in actions) {
             const parameters = actions[actionName];
-            if (actionName === "Speak") { // Speak is a special case
-                result = parameters["message_to_user"];
+            console.log(`Executing bot action ${actionName} with parameters ${JSON.stringify(parameters)}, possible actions: ${JSON.stringify(this.brain.getBotActions())}`);
+            const actionToCall = this.brain.getBotActions().find((action) => action.name === actionName); // find the bot action (e.g. Speak, Execute trade
+            if (actionToCall === undefined) {
+                console.error(`Could not find bot action ${actionName}`);
                 continue;
             }
-            this.brain.getBotActions().find((botAction) => { // search for the action the LLM wants to take
-                if (botAction.name === actionName) {
-                    botAction.functionToCall(this.getBagContext(), parameters); // and call it
-                    return true;
-                }
-                return false;
-            })
+            result += await actionToCall.functionToCall(this.getBagContext(), parameters); // and call it
+            result += "\n";
         }
-        return result;
+        return result.length > 0 ? result : undefined;
     }
 
     async constructUserJson(actionName: string, parameters: { [prompt: string]: string }): Promise<string> {
