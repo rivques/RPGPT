@@ -35,17 +35,26 @@ export class OpenAIHackClubProxy extends ChatbotInterface {
         }
         if (response.message.content == undefined) {
             console.error("OpenAIHackClubProxy: error parsing OpenAI response into LlmResponse")
-            return { "Speak": { "message_to_user": "Error parsing OpenAI response into LlmResponse. Raw response: " + JSON.stringify(response) } }
+            return {
+                result: { "Speak": { "message_to_user": "Error parsing OpenAI response into LlmResponse. Raw response: " + JSON.stringify(response) } },
+                tokens: { in: responses.usage?.prompt_tokens ?? 0, out: responses.usage?.completion_tokens ?? 0 }
+            }
 
         }
         console.debug(`Message: ${response.message.content}`)
         try {
-            const llmResponse: LlmResponse = JSON.parse(response.message.content)
+            const llmResponse: LlmResponse = {
+                result: JSON.parse(response.message.content),
+                tokens: { in: responses.usage?.prompt_tokens ?? 0, out: responses.usage?.completion_tokens ?? 0 }
+            }
             return llmResponse
         } catch (e) {
             console.error("OpenAIHackClubProxy: error parsing gpt response into LlmResponse")
             console.error(e)
-            return { "Speak": { "message_to_user": "Error parsing gpt response into LlmResponse. Raw response: " + JSON.stringify(response) } }
+            return {
+                result: { "Speak": { "message_to_user": "Error parsing gpt response into LlmResponse. Raw response: " + JSON.stringify(response) } },
+                tokens: { in: responses.usage?.prompt_tokens ?? 0, out: responses.usage?.completion_tokens ?? 0}
+            }
         }
     }
 }

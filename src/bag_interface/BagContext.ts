@@ -41,7 +41,7 @@ export class BagContext { // Information about the current interaction, used in 
             }]
         }
         console.log("inventory:")
-        console.log(inventory)
+        //console.log(inventory)
         let result: ItemStack[] = [] // convert from bag's Instance[] to ItemStack[]
         inventory.forEach((item) => {
             if (item.itemId === undefined || item.quantity === undefined) {

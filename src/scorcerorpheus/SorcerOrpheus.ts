@@ -17,6 +17,8 @@ export class SorcerOrpheus {
     private system_prompt: string;
     private messages: Message[] = [];
     private bagContext: BagContext;
+    private inTokensUsed: number = 0;
+    private outTokensUsed: number = 0;
     constructor(chatbotInterface: ChatbotInterface, brain: NpcBrain, bagContext: BagContext) {
         this.chatbotInterface = chatbotInterface;
         this.bagContext = bagContext;
@@ -25,8 +27,8 @@ export class SorcerOrpheus {
             + 'and you can respond to them. Format your responses in JSON format, according to the following schema ' // tweak it if you have systemic misbehavior
             + '(use as many actions and parameters as appropriate):\n'
             + '{'
-            + '  actionName: parameterObject'
-            + '}'
+            + 'actionName: parameterObject'
+            + '} '
             + 'for example:\n'
             + '{ "Speak": { "message_to_user": "Hello, how are you?" } }\n'
             + 'Only call actions that make sense in context. You must always call at least one action, '
@@ -47,7 +49,9 @@ export class SorcerOrpheus {
     private async handleUserAction(userJson: string): Promise<ResponseForUser>{
         this.messages.push({ role: "user", content: userJson }); // add the user's message to what the LLM will see
         const response = await this.chatbotInterface.prompt(this.system_prompt, this.messages); // send the prompt to the LLM
-        this.messages.push({ role: "assistant", content: JSON.stringify(response) }); // add the LLM's response to history
+        this.inTokensUsed += response.tokens.in;
+        this.outTokensUsed += response.tokens.out;
+        this.messages.push({ role: "assistant", content: JSON.stringify(response.result) }); // add the LLM's response to history
         const lastUserMessage = JSON.parse(this.messages[this.messages.length - 2].content);
         this.messages[this.messages.length - 2].content = JSON.stringify({ // simplify user message so we don't send kilotokens of old context and bot actions
             "user-action": lastUserMessage["user-action"],
@@ -55,6 +59,7 @@ export class SorcerOrpheus {
         });
         const messageForUser = await this.handleBotActionsAndReturnMessage(response); // actually execute what the bot wants to do
         const possibleUserActions = this.brain.getUserActions(); // figure out what the user can do
+        console.info(`Total tokens this interaction: ${this.inTokensUsed} in, ${this.outTokensUsed} out`)
         return {
             message: messageForUser,
             actions: possibleUserActions
@@ -63,8 +68,8 @@ export class SorcerOrpheus {
 
     async handleBotActionsAndReturnMessage(actions: LlmResponse): Promise<string | undefined> { // execute the bot's whims and return what the bot wants to say
         let result = "";
-        for (const actionName in actions) {
-            const parameters = actions[actionName];
+        for (const actionName in actions.result) {
+            const parameters = actions.result[actionName];
             console.log(`Executing bot action ${actionName} with parameters ${JSON.stringify(parameters)}, possible actions: ${JSON.stringify(this.brain.getBotActions())}`);
             const actionToCall = this.brain.getBotActions().find((action) => action.name === actionName); // find the bot action (e.g. Speak, Execute trade
             if (actionToCall === undefined) {
@@ -95,6 +100,10 @@ export class SorcerOrpheus {
     }
     getBagContext(): BagContext {
         return this.bagContext;
+    }
+
+    getTokensUsed(): { in: number, out: number } {
+        return { in: this.inTokensUsed, out: this.outTokensUsed };
     }
 
     async handleUserActionButton(actionName: string, parameters: { [user_label: string]: string; }) {

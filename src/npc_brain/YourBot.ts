@@ -44,8 +44,8 @@ export class YourBot extends NpcBrain {
                 parameters: {
                     "item-you-give-up": "The item you want to give to the player. Format: Item (e.g. Wheat). Don't pluralize (e.g. Sword, not Swords)",
                     "item-given-count": "The number of items you want to give to the player",
-                    "item-you-recieve": "The item you want to receive from the player. Format: Item (e.g. Wheat). Don't pluralize (e.g. Sword, not Swords)",
-                    "item-recieved-count": "The number of items you want to receive from the player"
+                    "item-you-receive": "The item you want to receive from the player. Format: Item (e.g. Wheat). Don't pluralize (e.g. Sword, not Swords)",
+                    "item-received-count": "The number of items you want to receive from the player"
                 },
                 functionToCall: async (ctx, parameters) => {
                     const tradeResult = await ctx.proposeTrade(
@@ -55,14 +55,14 @@ export class YourBot extends NpcBrain {
                             quantity: Number(parameters["item-given-count"])
                         }],
                         [{
-                            item: parameters["item-you-recieve"],
-                            quantity: Number(parameters["item-recieved-count"])
+                            item: parameters["item-you-receive"],
+                            quantity: Number(parameters["item-received-count"])
                         }]
                     );
                     if (tradeResult.status === "error") {
                         return `${this.getNpcName()} tried to start a trade, but encountered an error: ${tradeResult.error_message}`;
                     }
-                    return `${this.getNpcName()} has conducted a trade, giving ${parameters["given-count"]} ${parameters["item-given"]} and receiving ${parameters["received-count"]} ${parameters["item-received"]}`;
+                    return `${this.getNpcName()} has conducted a trade, giving ${parameters["item-given-count"]} ${parameters["item-you-give-up"]} and receiving ${parameters["item-received-count"]} ${parameters["item-you-receive"]}`;
                 }
             }
         ]

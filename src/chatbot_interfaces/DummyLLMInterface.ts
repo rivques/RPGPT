@@ -6,6 +6,6 @@ export class DummyLLMInterface extends ChatbotInterface {
         console.log("Prompting DummyLLMInterface with:")
         console.log(system)
         console.log(messages)
-        return { "Speak": { "message_to_user": "Hello, how are you? - Dummy Interface" } }
+        return {result: { "Speak": { "message_to_user": "Hello, how are you? - Dummy Interface" } }, tokens: { in: messages.length, out: 23 }}
     }
 }

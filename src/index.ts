@@ -23,9 +23,9 @@ const settings: InteractionManagerSettings = { // this is the main settings obje
   bagAppKey: getEnvVariable('BAG_APP_KEY'),
   bagOwnerID: getEnvVariable('BAG_OWNER_ID'),
   llmSettings: {
-    provider: "dummy", // EDIT THIS: if you want to use a different AI service
-    // llmAPIKey: getEnvVariable('OPENAI_PROXY_API_KEY'),
-    // model: "gpt-3.5-turbo",
+    provider: "openai-proxy", // EDIT THIS: if you want to use a different AI service
+    llmAPIKey: getEnvVariable('OPENAI_PROXY_API_KEY'),
+    model: "gpt-3.5-turbo",
     maxResponseTokens: 500
   },
   httpsSettings: { // EDIT THIS: if you don't want to use https (e.g, if ngrok is handling it)

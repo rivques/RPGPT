@@ -100,6 +100,10 @@ export class InteractionManager {
             
                 return
             }
+            if (mre.subtype === 'slackbot_response') {
+                console.log("get out of here slackbot")
+                return
+            }
             const interaction = this.currentInteractions.find((interaction) => {
                 return interaction.threadInfo.channelID === mre.channel && interaction.threadInfo.ts === mre.thread_ts;
             });
@@ -195,6 +199,17 @@ export class InteractionManager {
         })();
     }
 
+    getAllTokensUsed(): { in: number, out: number } {
+        let inTokens = 0;
+        let outTokens = 0;
+        for (const interaction of this.currentInteractions) {
+            const tokensUsed = interaction.sorcerorpheus.getTokensUsed();
+            inTokens += tokensUsed.in;
+            outTokens += tokensUsed.out;
+        }
+        return { in: inTokens, out: outTokens };
+    }
+
     async handleStartInteractionCommand(event: GenericMessageEvent) {
         // start an interaction with the user who sent the command
         // this involves creating a new SorcerOrpheus (with some context), posting a message to slack, and adding the interaction to currentInteractions
@@ -260,6 +275,7 @@ export class InteractionManager {
             blocks: blocks,
             text: responseToShow.message
         });
+        console.info(`Total tokens this bagkery run: ${this.getAllTokensUsed().in} in, ${this.getAllTokensUsed().out} out`)
     }
 
     handleActionButtonPressed(action: BlockAction<ButtonAction>) {

@@ -35,12 +35,18 @@ export class AnthropicInterface extends ChatbotInterface {
         console.debug(`Tokens used: input: ${response.usage.input_tokens}, output: ${response.usage.output_tokens}`)
         // now, parse concatenatedText into an LlmResponse
         try {
-            const llmResponse: LlmResponse = JSON.parse(concatenatedText)
+            const llmResponse: LlmResponse = {
+                result: JSON.parse(concatenatedText),
+                tokens: { in: response.usage.input_tokens, out: response.usage.output_tokens }
+            }
             return llmResponse
         } catch (e) {
             console.error("AnthropicInterface: error parsing Anthropic response into LlmResponse")
             console.error(e)
-            return { "Speak": { "message_to_user": "Error parsing Anthropic response into LlmResponse. Raw response: " + JSON.stringify(response) } }
+            return {
+                result: { "Speak": { "message_to_user": "Error parsing Anthropic response into LlmResponse. Raw response: " + JSON.stringify(response) } },
+                tokens: { in: response.usage.input_tokens, out: response.usage.output_tokens }
+            }
         }
     }
 }
