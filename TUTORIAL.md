@@ -15,6 +15,7 @@ In the terminal, type `npm i` and hit enter.
 Copy the `.env.example` file on the left sidebar and rename it to `.env`. This is where all of your API keys will go, and we'll fill it up over the next few steps.
 ## Set up Slack app
 First, we need to get ourselves a Slack app. Head to the [Your Slack Apps](https://api.slack.com/apps) page and hit "Create New App," then "From Scratch." Name it whatever your NPC's name is, and select "Hack Club" for the workspace.
+
 ![image](https://github.com/rivques/RPGPT/assets/38469076/58d3e672-2e94-496c-831e-8c3e3cff0cd2)
 Hit "Create App," then scroll down to "App Credentials." Copy the signing secret -- this is the first of many API keys you'll need. Head to your `.env` file and paste it next to `SLACK_SIGNING_SECRET`, making sure there's no space between the `=` and the start of the secret. Next, we need to add some scopes to this app. Head to "OAuth & Permissions," then scroll down to Bot Token Scopes. Add the following scopes:
 ```
@@ -28,6 +29,9 @@ chat:write.public
 There's a few more things we'll need to do with Slack later, but that's all for now.
 ## Set up bag app
 Next, we need to register an app with Bag. Head to the Slack and run /bot somewhere. Enter your bot's name, then choose "public" and "read," and hit "create."
+
+![image](https://github.com/rivques/RPGPT/assets/38469076/f6e7ff0a-c076-49a5-8687-a2b1cf286db1)
+
 ## set up llm provider key
 ## set caddy
 ## set up slack channels
