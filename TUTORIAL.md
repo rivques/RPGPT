@@ -6,9 +6,9 @@ Hi! This will teach you how to set up your own LLM-based Bag bot. We'll host it 
 ## Sign into your Nest account
 (if you're not using VS Code, connection to Nest is beyond the scope of this guide. I trust you.)
 
-Open VS Code, install the Remote SSH extensonand click the blue >< symbol in the bottom left corner. Click "Connect current window to host," then "Add new SSH host." Enter `ssh YOURNESTUSERNAME@YOURNESTUSERNAME.hackclub.app`. Hit enter, then enter again, then click "connect" in the notification in the bottom-right corner. A new window will open. Select "Linux" on the prompt, then "Continue". You should now find yourself logged into Nest.
+Open VS Code, install the Remote SSH extensonand click the blue >< symbol in the bottom left corner. Click "Connect current window to host," then "Add new SSH host." Enter `ssh NESTUSERNAME@NESTUSERNAME.hackclub.app`, replacing NESTUSERNAME with your Nest username. Hit enter, then enter again, then click "connect" in the notification in the bottom-right corner. A new window will open. Select "Linux" on the prompt, then "Continue". You should now find yourself logged into Nest.
 ## Fork and clone this repository
-Head to https://github.com/rivques/RPGPT (if you're not already here). Click "Fork" in the top right, then change "repository name" to whatever you'd like the name of your NPC to be, and hit "Create fork." Once your fork is create, hit the big green "Code" button, then copy the url. Head back into VS code and hit ``Ctrl+`​`` (that's the backtick) to bring up a terminal. Type `git clone URL`, replacing URL with what you just copied, and hit enter. Finally, open the folder from VS Code by heading to `File->Open Folder`, then selecting the repository you just cloned.
+Head to https://github.com/rivques/RPGPT (if you're not already here). Click "Fork" in the top right, then change "repository name" to whatever you'd like the name of your NPC to be, and hit "Create fork." Once your fork is create, hit the big green "Code" button, then copy the url. Head back into VS Code and hit ``Ctrl+`​`` (that's the backtick) to bring up a terminal. Type `git clone URL`, replacing URL with what you just copied, and hit enter. Finally, open the folder from VS Code by heading to `File->Open Folder`, then selecting the repository you just cloned.
 ## Install dependencies
 In the terminal, type `npm i` and hit enter.
 ## Create .env
@@ -33,9 +33,9 @@ Next, we need to register an app with Bag. Head to the Slack and run /bot somewh
 ![screenshot of Bag app creation dialog](https://github.com/rivques/RPGPT/assets/38469076/f6e7ff0a-c076-49a5-8687-a2b1cf286db1)
 
 Bag should immediately DM you an app ID and app token. Put the app ID in your `.env` file next to `BAG_APP_ID=` (put it before the comment starting with a hashtag, i.e. `BAG_APP_ID=27 # get these two...`). Put the app token next to `BAG_APP_KEY=`. While you're in the Slack, click on your profile picture in the bottom left, then click "profile." Select the three vertical dots in the menu that pops up, then pick "Copy member ID." Paste this next to `BAG_OWNER_ID=` in the `.env` file.
-## Set up llm provider key
+## Set up OpenAI key
 Join the `#open-ai-token` channel, then run `/openai-create-token`. Copy the token it gives you and paste it next to `OPENAI_PROXY_API_KEY=` in `.env`.
-## Set up caddy
+## Set up Caddy
 Now we need to tell Nest about our app so Slack can talk to it. In VS Code, head to `File->Open File`, type `~/Caddyfile` in the search box and hit enter. Hit "Open" if you get asked to allow untrusted files. At the bottom of the caddyfile, just before the last closing brace, add the line `reverse_proxy :3000`. If you started with the default Caddyfile, you should get something that looks like this:
 ```
 {
@@ -50,7 +50,7 @@ http://USERNAME.hackclub.app {
     reverse_proxy :3000
 }
 ```
-Save the file, then in the terminal run `systemctl --user reload caddy` to apply your changes.
+Save the file, then in the terminal run `systemctl --user restart caddy` to apply your changes.
 ## Finish setting up Slack app
 Head back to the Slack app page and hit "Install to workspace," then "Allow." Now, when you go back to "OAuth & Permissions," you should see a "Bot User OAuth Token." Copy that and put it in your `.env` file next to `SLACK_BOT_TOKEN=`.
 
@@ -67,7 +67,10 @@ As an example, here's what Ore-pheus's file ended up looking like:
 ![screenshot of YourBot.ts for rivques/ore-pheus](https://github.com/rivques/RPGPT/assets/38469076/07815b67-d928-4cd4-b47d-7f6f160268bf)
 
 ### Trading
-Out of the box, the NPC is only capable of giving items to the player, not trading. This is because I wasn't able to quite get the prompt engineering right for trading, but if you want to try, you can scroll down in `YourBot.ts`, uncomment the trading code, and probably also comment out the giving code.
+Out of the box, the NPC is only capable of giving items to the player, not trading. This is because I wasn't able to quite get the prompt engineering right for trading, but if you want to try, you can scroll down in `YourBot.ts`, uncomment the trading code, and probably also comment out the giving code. Be prepared to go bug hunting if you do this.
 ## Run the bot!
+Once you like what you have, run `nohup npm start > rpgpt.log &` to start it running forever!
+### Stopping the bot
+If you've started your bot with `nohup` and you want to stop it, you can run `fuser -INT -k 3000/tcp`.
 ## a note on ports
-There's two ports happening here: Internally, Node is hosting a server on port 3000. Externally, Caddy is forwarding HTTPS traffic on port 443. This means that you can't easily be serving another server on 443 while running an NPC like this, and doing so is beyond the scope of this guide (read: i don't know how to do it).
+There's two ports happening here: Internally, Node is hosting a server on port 3000. Externally, Caddy is forwarding HTTPS traffic on port 443. This means that you can't easily be serving another server on 443 while running an NPC like this, and doing so is beyond the scope of this guide (read: i don't know how to do it). If you want to use a different internal port, pretty much everywhere you see a 3000 in this guide should be changed, and you'll also need to change `SLACK_APP_PORT` in `.env`.
