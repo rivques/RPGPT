@@ -1,5 +1,5 @@
 import { Item, PlayerID, ItemStack, BagResult, BagError } from "./BagTypes";
-import { App } from "@hackclub/bag";
+import { App, Instance } from "@hackclub/bag";
 
 export class BagContext { // Information about the current interaction, used in bot actions
     private bagApp: App
@@ -10,9 +10,42 @@ export class BagContext { // Information about the current interaction, used in 
         this.interactingPlayerID = interactingPlayerID;
         this.ownerID = ownerID;
     }
-    giveItem(item: string) {
-        // TODO
-        console.log(`Giving item ${item}`);
+    async giveItem(item: ItemStack): Promise<BagResult<undefined>> {
+        let ourInventory;
+        try { // i'm sure there's a better way to do this error handling, but this works
+            ourInventory = await this.bagApp.getInventory({
+                identityId: this.ownerID,
+                available: true
+            })
+        } catch (e: unknown) {
+            return this.handleBagError(e, "getting inventory for giving");
+        }
+        
+        let convertedItemToGive;
+        const itemFull = ourInventory.find((instance) => instance.itemId === item.item)
+        if (itemFull === undefined) {
+            return {
+                status: "error",
+                error_message: `Item ${item.item} not found in inventory of <@${this.ownerID}>`
+            }
+        }
+        convertedItemToGive = {
+            id: itemFull.id,
+            quantity: item.quantity
+        }
+        try {
+            this.bagApp.runGive({
+                giverId: this.ownerID,
+                receiverId: this.interactingPlayerID,
+                instances: [convertedItemToGive]
+            })
+        } catch (e: unknown) {
+            return this.handleBagError(e, "giving item");
+        }
+        return {
+            status: "success",
+            result: undefined
+        }
     }
     private handleBagError(e: unknown, activity: string): BagError {
         if (e instanceof Error) {

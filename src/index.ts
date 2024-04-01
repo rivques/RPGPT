@@ -28,10 +28,10 @@ const settings: InteractionManagerSettings = { // this is the main settings obje
     model: "gpt-3.5-turbo",
     maxResponseTokens: 500
   },
-  httpsSettings: { // EDIT THIS: if you don't want to use https (e.g, if ngrok is handling it)
-    keyPath: getEnvVariable('HTTPS_KEY_PATH'),
-    certPath: getEnvVariable('HTTPS_CERT_PATH')
-  }
+  // httpsSettings: { // EDIT THIS: if you're handling https yourself
+  //   keyPath: getEnvVariable('HTTPS_KEY_PATH'),
+  //   certPath: getEnvVariable('HTTPS_CERT_PATH')
+  // }
 };
 
 (async () => {
