@@ -64,6 +64,7 @@ If you find you need to make changes to your prompt, first `Ctrl+C` the bot in t
 
 As an example, here's what Ore-pheus's file ended up looking like:
 
+![screenshot of YourBot.ts for rivques/ore-pheus](https://github.com/rivques/RPGPT/assets/38469076/07815b67-d928-4cd4-b47d-7f6f160268bf)
 
 ### Trading
 Out of the box, the NPC is only capable of giving items to the player, not trading. This is because I wasn't able to quite get the prompt engineering right for trading, but if you want to try, you can scroll down in `YourBot.ts`, uncomment the trading code, and probably also comment out the giving code.
