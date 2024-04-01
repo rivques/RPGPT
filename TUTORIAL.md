@@ -15,6 +15,7 @@ In the terminal, type `npm i` and hit enter.
 Copy the `.env.example` file on the left sidebar and rename it to `.env`. This is where all of your API keys will go, and we'll fill it up over the next few steps.
 ## set up slack app
 First, we need to get ourselves a Slack app. Head to the [Your Slack Apps](https://api.slack.com/apps) page and hit "Create New App," then "From Scratch." Name it whatever your NPC's name is, and select "Hack Club" for the workspace.
+![image](https://github.com/rivques/RPGPT/assets/38469076/58d3e672-2e94-496c-831e-8c3e3cff0cd2)
 ## set up bag app
 ## set up llm provider key
 ## set caddy
