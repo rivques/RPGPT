@@ -8,15 +8,25 @@ Hi! This will teach you how to set up your own LLM-based Bag bot. We'll host it 
 
 Open VS Code, install the Remote SSH extensonand click the blue >< symbol in the bottom left corner. Click "Connect current window to host," then "Add new SSH host." Enter `ssh YOURNESTUSERNAME@YOURNESTUSERNAME.hackclub.app`. Hit enter, then enter again, then click "connect" in the notification in the bottom-right corner. A new window will open. Select "Linux" on the prompt, then "Continue". You should now find yourself logged into Nest.
 ## Fork and clone this repository
-Head to https://github.com/rivques/RPGPT (if you're not already here). Click "Fork" in the top right, then change "repository name" to whatever you'd like the name of your NPC to be, and hit "Create fork." Once your fork is create, hit the big green "Code" button, then copy the url. Head back into VS code and hit ``Ctrl+` `` (that's the backtick) to bring up a terminal. Type `git clone URL`, replacing URL with what you just copied, and hit enter. Finally, open the folder from VS Code by heading to `File->Open Folder`, then selecting the repository you just cloned.
+Head to https://github.com/rivques/RPGPT (if you're not already here). Click "Fork" in the top right, then change "repository name" to whatever you'd like the name of your NPC to be, and hit "Create fork." Once your fork is create, hit the big green "Code" button, then copy the url. Head back into VS code and hit ``Ctrl+`​`` (that's the backtick) to bring up a terminal. Type `git clone URL`, replacing URL with what you just copied, and hit enter. Finally, open the folder from VS Code by heading to `File->Open Folder`, then selecting the repository you just cloned.
 ## Install dependencies
 In the terminal, type `npm i` and hit enter.
 ## Create .env
 Copy the `.env.example` file on the left sidebar and rename it to `.env`. This is where all of your API keys will go, and we'll fill it up over the next few steps.
-## set up slack app
+## Set up Slack app
 First, we need to get ourselves a Slack app. Head to the [Your Slack Apps](https://api.slack.com/apps) page and hit "Create New App," then "From Scratch." Name it whatever your NPC's name is, and select "Hack Club" for the workspace.
 ![image](https://github.com/rivques/RPGPT/assets/38469076/58d3e672-2e94-496c-831e-8c3e3cff0cd2)
-## set up bag app
+Hit "Create App," then scroll down to "App Credentials." Copy the signing secret -- this is the first of many API keys you'll need. Head to your `.env` file and paste it next to `SLACK_SIGNING_SECRET`, making sure there's no space between the `=` and the start of the secret. Next, we need to add some scopes to this app. Head to "OAuth & Permissions," then scroll down to Bot Token Scopes. Add the following scopes:
+```
+app_mentions:read
+channels:history
+channels:join
+channels:read
+chat:write
+chat:write.public
+```
+There's a few more things we'll need to do with Slack later, but that's all for now.
+## Set up bag app
 ## set up llm provider key
 ## set caddy
 ## set up slack channels
