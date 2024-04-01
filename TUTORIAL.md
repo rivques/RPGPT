@@ -27,6 +27,7 @@ chat:write.public
 ```
 There's a few more things we'll need to do with Slack later, but that's all for now.
 ## Set up bag app
+Next, we need to register an app with Bag. Head to the Slack and run /bot somewhere. Enter your bot's name, then choose "public" and "read," and hit "create."
 ## set up llm provider key
 ## set caddy
 ## set up slack channels
